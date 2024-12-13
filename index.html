@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Hour Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #d42955;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+        }
+        main {
+            max-width: 800px;
+            margin: 2em auto;
+            padding: 1em;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+        }
+        input, select, button {
+            padding: 0.5em;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #d42955;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #5ae717;
+        }
+        .restaurant-list {
+            margin-top: 2em;
+        }
+        .restaurant-item {
+            padding: 1em;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+        .restaurant-item img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 0.5em;
+            border-radius: 4px;
+        }
+        .delete-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #e64a19;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.3em 0.5em;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: red;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            body {
+                padding: 0.5em;
+            }
+            main {
+                margin: 1em auto;
+                padding: 1em;
+            }
+            header {
+                font-size: 1.5em;
+            }
+            input, button {
+                font-size: 0.9em;
+                padding: 0.4em;
+            }
+            .restaurant-item {
+                padding: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Pearl's Happy Hour Tracker</h1>
+    </header>
+    <main>
+        <h2>Add a Restaurant</h2>
+        <form id="happyHourForm">
+            <input type="text" id="restaurantName" placeholder="Restaurant Name" required>
+            <input type="text" id="happyHourTime" placeholder="Happy Hour Time (e.g., 4-6 PM)" required>
+            <input type="text" id="happyHourDetails" placeholder="Happy Hour Details" required>
+            <input type="file" id="restaurantImage" accept="image/*">
+            <button type="submit">Add Restaurant</button>
+        </form>
+
+        <div class="restaurant-list" id="restaurantList">
+            <h2>Happy Hour List</h2>
+            <!-- Restaurants will be listed here dynamically -->
+        </div>
+    </main>
+
+    <script>
+        const form = document.getElementById('happyHourForm');
+        const restaurantList = document.getElementById('restaurantList');
+
+        // Load restaurants from localStorage on page load
+        window.addEventListener('load', function () {
+            const storedRestaurants = JSON.parse(localStorage.getItem('restaurants')) || [];
+            storedRestaurants.forEach(({ name, time, details, imageSrc }, index) => {
+                addRestaurantToDOM(name, time, details, imageSrc, index);
+            });
+        });
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('restaurantName').value;
+            const time = document.getElementById('happyHourTime').value;
+            const details = document.getElementById('happyHourDetails').value;
+            const imageFile = document.getElementById('restaurantImage').files[0];
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageSrc = e.target.result;
+                addRestaurant(name, time, details, imageSrc);
+            };
+
+            if (imageFile) {
+                reader.readAsDataURL(imageFile);
+            } else {
+                addRestaurant(name, time, details, null);
+            }
+
+            form.reset();
+        });
+
+        function addRestaurant(name, time, details, imageSrc) {
+            const restaurants = JSON.parse(localStorage.getItem('restaurants')) || [];
+            restaurants.push({ name, time, details, imageSrc });
+            localStorage.setItem('restaurants', JSON.stringify(restaurants));
+            addRestaurantToDOM(name, time, details, imageSrc, restaurants.length - 1);
+        }
+
+        function addRestaurantToDOM(name, time, details, imageSrc, index) {
+            const div = document.createElement('div');
+            div.classList.add('restaurant-item');
+            div.dataset.index = index;
+            div.innerHTML = `<strong>${name}</strong><br><em>${time}</em><br>${details}`;
+
+            if (imageSrc) {
+                const img = document.createElement('img');
+                img.src = imageSrc;
+                div.appendChild(img);
+            }
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.classList.add('delete-button');
+            deleteButton.addEventListener('click', function () {
+                deleteRestaurant(index);
+            });
+
+            div.appendChild(deleteButton);
+            restaurantList.appendChild(div);
+        }
+
+        function deleteRestaurant(index) {
+            const restaurants = JSON.parse(localStorage.getItem('restaurants')) || [];
+            restaurants.splice(index, 1);
+            localStorage.setItem('restaurants', JSON.stringify(restaurants));
+            renderRestaurants();
+        }
+
+        function renderRestaurants() {
+            restaurantList.innerHTML = '<h2>Happy Hour List</h2>';
+            const restaurants = JSON.parse(localStorage.getItem('restaurants')) || [];
+            restaurants.forEach(({ name, time, details, imageSrc }, index) => {
+                addRestaurantToDOM(name, time, details, imageSrc, index);
+            });
+        }
+    </script>
+</body>
+</html>
