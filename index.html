@@ -43,7 +43,7 @@
             cursor: pointer;
         }
         button:hover {
-            background-color: #5ae717;
+            background-color: #e64a19;
         }
         .restaurant-list {
             margin-top: 2em;
@@ -71,7 +71,7 @@
             cursor: pointer;
         }
         .delete-button:hover {
-            background-color: red;
+            background-color: #d84315;
         }
 
         /* Responsive Design */
@@ -98,7 +98,7 @@
 </head>
 <body>
     <header>
-        <h1>Pearl's Happy Hour Tracker</h1>
+        <h1>Pearl's Happy Hour List</h1>
     </header>
     <main>
         <h2>Add a Restaurant</h2>
@@ -107,11 +107,32 @@
             <input type="text" id="happyHourTime" placeholder="Happy Hour Time (e.g., 4-6 PM)" required>
             <input type="text" id="happyHourDetails" placeholder="Happy Hour Details" required>
             <input type="file" id="restaurantImage" accept="image/*">
+            <select id="happyHourDay" required>
+                <option value="" disabled selected>Select Day</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+            </select>
             <button type="submit">Add Restaurant</button>
         </form>
 
         <div class="restaurant-list" id="restaurantList">
             <h2>Happy Hour List</h2>
+            <select id="filterDay">
+                <option value="" selected>All Days</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+            </select>
+            <button id="filterButton">Filter by Day</button>
             <!-- Restaurants will be listed here dynamically -->
         </div>
     </main>
@@ -119,13 +140,12 @@
     <script>
         const form = document.getElementById('happyHourForm');
         const restaurantList = document.getElementById('restaurantList');
+        const filterButton = document.getElementById('filterButton');
+        const filterDay = document.getElementById('filterDay');
 
         // Load restaurants from localStorage on page load
         window.addEventListener('load', function () {
-            const storedRestaurants = JSON.parse(localStorage.getItem('restaurants')) || [];
-            storedRestaurants.forEach(({ name, time, details, imageSrc }, index) => {
-                addRestaurantToDOM(name, time, details, imageSrc, index);
-            });
+            renderRestaurants();
         });
 
         form.addEventListener('submit', function(event) {
@@ -134,35 +154,41 @@
             const name = document.getElementById('restaurantName').value;
             const time = document.getElementById('happyHourTime').value;
             const details = document.getElementById('happyHourDetails').value;
+            const day = document.getElementById('happyHourDay').value;
             const imageFile = document.getElementById('restaurantImage').files[0];
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 const imageSrc = e.target.result;
-                addRestaurant(name, time, details, imageSrc);
+                addRestaurant(name, time, details, day, imageSrc);
             };
 
             if (imageFile) {
                 reader.readAsDataURL(imageFile);
             } else {
-                addRestaurant(name, time, details, null);
+                addRestaurant(name, time, details, day, null);
             }
 
             form.reset();
         });
 
-        function addRestaurant(name, time, details, imageSrc) {
+        filterButton.addEventListener('click', function () {
+            const selectedDay = filterDay.value;
+            renderRestaurants(selectedDay);
+        });
+
+        function addRestaurant(name, time, details, day, imageSrc) {
             const restaurants = JSON.parse(localStorage.getItem('restaurants')) || [];
-            restaurants.push({ name, time, details, imageSrc });
+            restaurants.push({ name, time, details, day, imageSrc });
             localStorage.setItem('restaurants', JSON.stringify(restaurants));
-            addRestaurantToDOM(name, time, details, imageSrc, restaurants.length - 1);
+            renderRestaurants();
         }
 
-        function addRestaurantToDOM(name, time, details, imageSrc, index) {
+        function addRestaurantToDOM(name, time, details, day, imageSrc, index) {
             const div = document.createElement('div');
             div.classList.add('restaurant-item');
             div.dataset.index = index;
-            div.innerHTML = `<strong>${name}</strong><br><em>${time}</em><br>${details}`;
+            div.innerHTML = `<strong>${name}</strong><br><em>${time}</em><br>${details}<br><em>Day: ${day}</em>`;
 
             if (imageSrc) {
                 const img = document.createElement('img');
@@ -188,11 +214,19 @@
             renderRestaurants();
         }
 
-        function renderRestaurants() {
-            restaurantList.innerHTML = '<h2>Happy Hour List</h2>';
+        function renderRestaurants(filterDay = '') {
+            restaurantList.innerHTML = '<h2>Happy Hour List</h2><select id="filterDay"><option value="" selected>All Days</option><option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option><option value="Saturday">Saturday</option><option value="Sunday">Sunday</option></select><button id="filterButton">Filter by Day</button>';
+
             const restaurants = JSON.parse(localStorage.getItem('restaurants')) || [];
-            restaurants.forEach(({ name, time, details, imageSrc }, index) => {
-                addRestaurantToDOM(name, time, details, imageSrc, index);
+            restaurants.forEach(({ name, time, details, day, imageSrc }, index) => {
+                if (!filterDay || day === filterDay) {
+                    addRestaurantToDOM(name, time, details, day, imageSrc, index);
+                }
+            });
+
+            document.getElementById('filterButton').addEventListener('click', function () {
+                const selectedDay = document.getElementById('filterDay').value;
+                renderRestaurants(selectedDay);
             });
         }
     </script>
